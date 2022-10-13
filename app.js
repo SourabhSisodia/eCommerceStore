@@ -2,10 +2,11 @@ const path = require("path");
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 
 const errorController = require("./controllers/error");
 require("dotenv").config();
-const mongoConnect = require("./util/database").mongoConnect;
+
 const User = require("./models/user");
 
 const app = express();
@@ -21,9 +22,10 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const port = process.env.PORT || 3000;
 app.use((req, res, next) => {
-  User.findById("6335e0957365a334f04960e4")
+  User.findById("6341b9c109cacacbd4a0df29")
     .then((user) => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      req.user = user;
+      console.log(req.user);
       next();
     })
     .catch((err) => console.log(err));
@@ -34,6 +36,25 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(() => {
-  app.listen(port);
-});
+mongoose
+  .connect(
+    "mongodb+srv://sourabh:12Qwerty@cluster0.lcbe3qo.mongodb.net/shop?retryWrites=true&w=majority"
+  )
+  .then((result) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Max",
+          email: "max@test.com",
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
+      }
+    });
+    app.listen(3000);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
